@@ -27,6 +27,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +66,13 @@ private fun ContentView() {
 
     remember { cells } //Recomposition is triggered after you change this object
 
+    /**
+     *  We want each image to display twice in the grid.
+     *  On Each run, the arrangement should be random.
+     *  remember helps with recomposition as it would prevent recomposition on click
+     *  and,it would keep the same list for the same compose lifespan.
+     */
+    val shuffledImages = remember { images + images }.shuffled()
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -72,13 +80,13 @@ private fun ContentView() {
         contentPadding = PaddingValues(8.dp),
     ) {
         items(12) { index ->
-            CardButton()
+            CardButton(imageVector = shuffledImages[index])
         }
     }
 }
 
 @Composable
-private fun CardButton() {
+private fun CardButton(imageVector: ImageVector) {
     Button(
         modifier = Modifier.aspectRatio(1.0f), colors = ButtonDefaults.buttonColors(
             contentColor = Color.White,
@@ -87,7 +95,7 @@ private fun CardButton() {
         onClick = {}
     ) {
 
-        Image(imageVector = images[0], "", Modifier.fillMaxSize())
+        Image(imageVector = imageVector, "", Modifier.fillMaxSize())
     }
 }
 
