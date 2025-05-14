@@ -48,9 +48,22 @@ val images = listOf(
     Icons.Default.ThumbUp,
 )
 
+/**
+ * TASK 1 : Display each image exactly twice in a grid, on each run, in a random order.
+ * TASK 2 : Match the images when clicked.If matched, green, not matched, Blue. If selected, yellow.
+ *
+ */
+
 // You can update with your own data structure if needed.
 // This is just an example of simplest data structure for recomposition.
 val cells: SnapshotStateList<Any> = listOf<Any>().toMutableStateList()
+
+data class CardData(
+    val id: Int,
+    val imageVector: ImageVector,
+    var isSelected: Boolean = false,
+    var isMatched: Boolean = false
+)
 
 /**
  * A simple [Composable] function that displays a grid of buttons.
@@ -67,12 +80,15 @@ private fun ContentView() {
     remember { cells } //Recomposition is triggered after you change this object
 
     /**
-     *  We want each image to display twice in the grid.
-     *  On Each run, the arrangement should be random.
-     *  remember helps with recomposition as it would prevent recomposition on click
-     *  and,it would keep the same list for the same compose lifespan.
+     *  Create a full list of card.
      */
-    val shuffledImages = remember { images + images }.shuffled()
+    val cards = remember {
+        (images + images).shuffled()
+            .mapIndexed { index, imageVector ->
+                CardData(id = index, imageVector = imageVector)
+            }
+            .toMutableStateList()
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -80,7 +96,8 @@ private fun ContentView() {
         contentPadding = PaddingValues(8.dp),
     ) {
         items(12) { index ->
-            CardButton(imageVector = shuffledImages[index])
+            val card = cards[index]
+            CardButton(imageVector = card.imageVector)
         }
     }
 }
@@ -100,5 +117,7 @@ private fun CardButton(imageVector: ImageVector) {
 }
 
 private val ColorBlue = Color.Blue.copy(red = 0.2f, blue = 0.9f, green = 0.3f, alpha = 0.8f)
-private val ColorYellow = Color.Yellow.copy(red = 0.9f, blue = 0.2f, green = 0.77f, alpha = 0.9f)
-private val ColorGreen = Color.Green.copy(red = 0.02f, blue = 0.16f, green = 0.70f, alpha = 0.8f)
+private val ColorYellow =
+    Color.Yellow.copy(red = 0.9f, blue = 0.2f, green = 0.77f, alpha = 0.9f)
+private val ColorGreen =
+    Color.Green.copy(red = 0.02f, blue = 0.16f, green = 0.70f, alpha = 0.8f)
