@@ -4,10 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CornerSize
@@ -21,8 +25,10 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,7 +37,10 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,7 +63,7 @@ val images = listOf(
 /**
  * TASK 1 : Display each image exactly twice in a grid, on each run, in a random order.
  * TASK 2 : Match the images when clicked.If matched, green, not matched, Blue. If selected, yellow.
- *
+ * TASK 3 : Add Turn count.
  */
 
 // You can update with your own data structure if needed.
@@ -87,40 +96,54 @@ private fun ContentView() {
         }.toMutableStateList()
     }
     var firstSelectedIndex by remember { mutableStateOf<Int?>(null) }
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(8.dp),
-    ) {
-        items(12) { index ->
-            val card = cards[index]
-            CardButton(
-                imageVector = card.imageVector, backgroundColor = when {
-                    card.isMatched -> ColorGreen
-                    card.isSelected -> ColorYellow
-                    else -> ColorBlue
-                }, onClick = {
-                    if (card.isMatched || card.isSelected) {
-                        //Matched items and Already selected items can't get selected
-                        return@CardButton
-                    }
-                    card.isSelected = true
-                    if (firstSelectedIndex == null) {
-                        //If first cars is selected, add it here!
-                        firstSelectedIndex = index
-                    } else {
-                        val firstSelectedCard = cards[firstSelectedIndex!!]
-                        if (firstSelectedCard.imageVector == card.imageVector) {
-                            card.isMatched = true
-                            firstSelectedCard.isMatched = true
-                        } else {
-                            card.isSelected = false
-                            firstSelectedCard.isSelected = false
+    var turnCount by remember { mutableIntStateOf(0) }
+    Column {
+        Text(
+            text = "Turn : $turnCount",
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.DarkGray
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp),
+        ) {
+            items(12) { index ->
+                val card = cards[index]
+                CardButton(
+                    imageVector = card.imageVector, backgroundColor = when {
+                        card.isMatched -> ColorGreen
+                        card.isSelected -> ColorYellow
+                        else -> ColorBlue
+                    }, onClick = {
+                        if (card.isMatched || card.isSelected) {
+                            //Matched items and Already selected items can't get selected
+                            return@CardButton
                         }
-                        firstSelectedIndex = null
-                    }
-                })
+                        card.isSelected = true
+                        if (firstSelectedIndex == null) {
+                            //If first cars is selected, add it here!
+                            firstSelectedIndex = index
+                        } else {
+                            val firstSelectedCard = cards[firstSelectedIndex!!]
+                            if (firstSelectedCard.imageVector == card.imageVector) {
+                                card.isMatched = true
+                                firstSelectedCard.isMatched = true
+                            } else {
+                                card.isSelected = false
+                                firstSelectedCard.isSelected = false
+                            }
+                            turnCount++
+                            firstSelectedIndex = null
+                        }
+                    })
+            }
         }
     }
 }
