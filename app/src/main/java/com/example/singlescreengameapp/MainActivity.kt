@@ -22,7 +22,10 @@ import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
@@ -58,21 +61,17 @@ val images = listOf(
 // This is just an example of simplest data structure for recomposition.
 val cells: SnapshotStateList<Any> = listOf<Any>().toMutableStateList()
 
-data class CardData(
-    val id: Int,
-    val imageVector: ImageVector,
-    var isSelected: Boolean = false,
-    var isMatched: Boolean = false
-)
+class CardData(
+    val id: Int, val imageVector: ImageVector
+) {
+    // To trigger compose, these values has to be under compose state tracking.
+    var isSelected by mutableStateOf(false)
+    var isMatched by mutableStateOf(false)
+}
 
 /**
  * A simple [Composable] function that displays a grid of buttons.
  * The grid is 3 columns wide and has 4 rows.
- *
- * Important:
- *  Manually import LazyVerticalGrid and GridCells.
- *  This can happen because different versions of Compose have placed these classes in different packages.
- *
  */
 @Composable
 private fun ContentView() {
@@ -83,12 +82,11 @@ private fun ContentView() {
      *  Create a full list of card.
      */
     val cards = remember {
-        (images + images).shuffled()
-            .mapIndexed { index, imageVector ->
-                CardData(id = index, imageVector = imageVector)
-            }
-            .toMutableStateList()
+        (images + images).shuffled().mapIndexed { index, imageVector ->
+            CardData(id = index, imageVector = imageVector)
+        }.toMutableStateList()
     }
+    var firstSelectedIndex by remember { mutableStateOf<Int?>(null) }
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -97,27 +95,49 @@ private fun ContentView() {
     ) {
         items(12) { index ->
             val card = cards[index]
-            CardButton(imageVector = card.imageVector)
+            CardButton(
+                imageVector = card.imageVector, backgroundColor = when {
+                    card.isMatched -> ColorGreen
+                    card.isSelected -> ColorYellow
+                    else -> ColorBlue
+                }, onClick = {
+                    if (card.isMatched || card.isSelected) {
+                        //Matched items and Already selected items can't get selected
+                        return@CardButton
+                    }
+                    card.isSelected = true
+                    if (firstSelectedIndex == null) {
+                        //If first cars is selected, add it here!
+                        firstSelectedIndex = index
+                    } else {
+                        val firstSelectedCard = cards[firstSelectedIndex!!]
+                        if (firstSelectedCard.imageVector == card.imageVector) {
+                            card.isMatched = true
+                            firstSelectedCard.isMatched = true
+                        } else {
+                            card.isSelected = false
+                            firstSelectedCard.isSelected = false
+                        }
+                        firstSelectedIndex = null
+                    }
+                })
         }
     }
 }
 
 @Composable
-private fun CardButton(imageVector: ImageVector) {
+private fun CardButton(
+    imageVector: ImageVector, backgroundColor: Color = ColorBlue, onClick: () -> Unit = {}
+) {
     Button(
         modifier = Modifier.aspectRatio(1.0f), colors = ButtonDefaults.buttonColors(
-            contentColor = Color.White,
-        ),
-        shape = RoundedCornerShape(CornerSize(10.dp)),
-        onClick = {}
+            containerColor = backgroundColor, contentColor = Color.White
+        ), shape = RoundedCornerShape(CornerSize(10.dp)), onClick = onClick
     ) {
-
         Image(imageVector = imageVector, "", Modifier.fillMaxSize())
     }
 }
 
 private val ColorBlue = Color.Blue.copy(red = 0.2f, blue = 0.9f, green = 0.3f, alpha = 0.8f)
-private val ColorYellow =
-    Color.Yellow.copy(red = 0.9f, blue = 0.2f, green = 0.77f, alpha = 0.9f)
-private val ColorGreen =
-    Color.Green.copy(red = 0.02f, blue = 0.16f, green = 0.70f, alpha = 0.8f)
+private val ColorYellow = Color.Yellow.copy(red = 0.9f, blue = 0.2f, green = 0.77f, alpha = 0.9f)
+private val ColorGreen = Color.Green.copy(red = 0.02f, blue = 0.16f, green = 0.70f, alpha = 0.8f)

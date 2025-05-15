@@ -27,6 +27,11 @@ android {
             )
         }
     }
+    composeOptions {
+        // Set the Kotlin compiler extension version to match your Compose BOM version
+        // From your libs.versions.toml, composeBom = "2024.09.00"
+        kotlinCompilerExtensionVersion = "2024.09.00"
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
