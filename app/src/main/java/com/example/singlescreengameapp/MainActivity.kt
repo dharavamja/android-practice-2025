@@ -72,10 +72,6 @@ val images = listOf(
  * TASK 5 : Add undo button.
  */
 
-// You can update with your own data structure if needed.
-// This is just an example of simplest data structure for recomposition.
-val cells: SnapshotStateList<Any> = listOf<Any>().toMutableStateList()
-
 class CardData(
     val id: Int, val imageVector: ImageVector
 ) {
@@ -90,8 +86,6 @@ class CardData(
  */
 @Composable
 private fun ContentView() {
-
-    remember { cells } //Recomposition is triggered after you change this object
 
     /**
      *  Create a full list of card.
