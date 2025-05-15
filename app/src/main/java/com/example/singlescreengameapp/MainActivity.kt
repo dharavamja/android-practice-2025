@@ -1,6 +1,5 @@
 package com.example.singlescreengameapp
 
-import android.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,12 +19,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,17 +38,17 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontVariation.width
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,76 +108,120 @@ private fun ContentView() {
         cards.addAll(originalCards)
     }
 
-    Column {
-        Row {
-            Text(
-                text = "Turn : $turnCount",
-                modifier = Modifier
-                    .padding(16.dp)
-                    .weight(1f),
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.DarkGray
-            )
-            FilledTonalButton(
-                onClick = {
-                    cards.clear()
-                    cards.addAll(originalCards.shuffled().map {
-                        CardData(id = it.id, imageVector = it.imageVector) // create a fresh copy
-                    })
-                    firstSelectedIndex = null
-                    turnCount = 0
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = Color(0xFFFFCDD2),
-                    contentColor = Color.Red
-                ),
-                modifier = Modifier.padding(4.dp)) {
+    val snackBarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackBarHostState)
+        }) { paddingValue ->
+        Column(modifier = Modifier.padding(paddingValue)) {
+            Row {
+                FilledTonalButton(
+                    onClick = {
+
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = Color(0x99A0A0B2), contentColor = Color.Black
+                    ),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Undo",
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "Undo", fontSize = 16.sp, fontWeight = FontWeight.Bold
+                    )
+                }
                 Text(
-                    text = "Reset",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Turn : $turnCount",
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.DarkGray
                 )
-            }
-        }
-        if (cards.size == 12) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(8.dp),
-            ) {
-                items(cards.size) { index ->
-                    val card = cards[index]
-                    CardButton(
-                        imageVector = card.imageVector, backgroundColor = when {
-                            card.isMatched -> ColorGreen
-                            card.isSelected -> ColorYellow
-                            else -> ColorBlue
-                        }, onClick = {
-                            if (card.isMatched || card.isSelected) {
-                                //Matched items and Already selected items can't get selected
-                                return@CardButton
-                            }
-                            card.isSelected = true
-                            if (firstSelectedIndex == null) {
-                                //If first cars is selected, add it here!
-                                firstSelectedIndex = index
-                            } else {
-                                val firstSelectedCard = cards[firstSelectedIndex!!]
-                                if (firstSelectedCard.imageVector == card.imageVector) {
-                                    card.isMatched = true
-                                    firstSelectedCard.isMatched = true
-                                } else {
-                                    card.isSelected = false
-                                    firstSelectedCard.isSelected = false
-                                }
-                                turnCount++
-                                firstSelectedIndex = null
-                            }
+                FilledTonalButton(
+                    onClick = {
+                        cards.clear()
+                        cards.addAll(originalCards.shuffled().map {
+                            // create a fresh copy
+                            CardData(
+                                id = it.id, imageVector = it.imageVector
+                            )
                         })
+                        firstSelectedIndex = null
+                        turnCount = 0
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar(message = "Game Reset Successfully!")
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = Color(0xFFFFCDD2), contentColor = Color.Red
+                    ),
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset",
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "Reset", fontSize = 16.sp, fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            if (cards.size == 12) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(8.dp),
+                ) {
+                    items(cards.size) { index ->
+                        val card = cards[index]
+                        CardButton(
+                            imageVector = card.imageVector, backgroundColor = when {
+                                card.isMatched -> ColorGreen
+                                card.isSelected -> ColorYellow
+                                else -> ColorBlue
+                            }, onClick = {
+                                if (card.isMatched) {
+                                    coroutineScope.launch {
+                                        snackBarHostState.showSnackbar("Already Matched card can't be selected!")
+                                    }
+                                    return@CardButton
+                                }
+                                if (card.isSelected) {
+                                    coroutineScope.launch {
+                                        snackBarHostState.showSnackbar("Already selected, please select another card!")
+                                    }
+                                    return@CardButton
+                                }
+                                card.isSelected = true
+                                if (firstSelectedIndex == null) {
+                                    //If first cars is selected, add it here!
+                                    firstSelectedIndex = index
+                                } else {
+                                    val firstSelectedCard = cards[firstSelectedIndex!!]
+                                    if (firstSelectedCard.imageVector == card.imageVector) {
+                                        card.isMatched = true
+                                        firstSelectedCard.isMatched = true
+                                    } else {
+                                        card.isSelected = false
+                                        firstSelectedCard.isSelected = false
+                                    }
+                                    turnCount++
+                                    firstSelectedIndex = null
+                                }
+                            })
+                    }
                 }
             }
         }
