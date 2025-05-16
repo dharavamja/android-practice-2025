@@ -7,16 +7,16 @@ A simple, single-screen memory matching game built with Jetpack Compose. This pr
 - Randomized Card Display: Each game, the cards (icons) are shuffled and displayed in a 3x4 grid, with each icon appearing exactly twice.
 
 - Memory Matching Logic:
-  - Tap a card to reveal its icon.
+  - Tap a card to select (and reveal its icon - will do in future!)
   - Tap a second card to attempt a match.
-  - Matched pairs remain face up and turn green.
-  - Unmatched pairs flip back face down after a short delay (and turn blue).
+  - Matched pairs turn green. (TODO - and remain face up) 
+  - Unmatched pairs and turn blue (TODO - flip back face down after a short delay).
   - Selected (but not yet matched) cards turn yellow.
   - Turn Counter: Tracks the number of pairs of cards attempted.
   - Reset Button: Starts a new game with a fresh, randomized set of cards and resets the turn count.
   - Undo Functionality: Allows the player to undo their last move (limited to 5 undos per game).
   - Visual Feedback: Utilizes different background colors to indicate the state of each card (matched, selected, or default).
-  - Snackbars: Provides feedback messages for actions like successful undo, game reset, and attempting to select already matched or selected cards.
+  - Snackbars: Provide feedback messages for actions like successful undo, game reset, and attempting to select already matched or selected cards.
 
 - Technologies Used:
   - Kotlin: The primary programming language for Android development.
@@ -33,11 +33,11 @@ Build and run the app on an emulator or a physical Android device.
 
 *How to Play:*
 
-- Tap on a card to reveal the hidden icon.
+- Tap on a card to select (In the future, reveal the hidden icon.)
 - Tap on a second card to see if it matches the first.
-- If the icons match, they will stay face up (green).
-- If they don't match, they will flip back over (blue).
-- Continue matching pairs until all cards are face up.
+- If the icons match, they will turn green. (In the future, stay face up)
+- If they don't match, they will turn blue. (In the future, flip back over).
+- Continue matching pairs until all cards are matched/face up.
 - The "Turn" counter tracks your attempts.
 - Use the "Reset" button to start a new game.
 - Use the "Undo" button to revert your last move (limited uses).
