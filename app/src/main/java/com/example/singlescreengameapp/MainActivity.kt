@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -75,6 +77,7 @@ val images = listOf(
  * TASK 3 : Add Turn count.
  * TASK 4 : Add Reset button.
  * TASK 5 : Add undo button.
+ * TASK 6 : Mask the cards
  */
 
 class CardData(
@@ -106,10 +109,14 @@ private fun ContentView() {
 
     var undoStack = remember { mutableStateListOf<List<CardData>>() }
     var undoCount by remember { mutableIntStateOf(5) }
+    var isInitialCardDisplay by remember { mutableStateOf<Boolean>(false) }
 
     LaunchedEffect(Unit) {
         cards.clear()
+        isInitialCardDisplay = true
         cards.addAll(originalCards.shuffled())
+        delay(600)
+        isInitialCardDisplay = false
     }
 
     val snackBarHostState = remember { SnackbarHostState() }
@@ -171,6 +178,7 @@ private fun ContentView() {
                 FilledTonalButton(
                     onClick = {
                         cards.clear()
+                        isInitialCardDisplay = true
                         cards.addAll(originalCards.shuffled().map {
                             // create a fresh copy
                             CardData(
@@ -182,6 +190,8 @@ private fun ContentView() {
                         undoCount = 5
                         coroutineScope.launch {
                             snackBarHostState.showSnackbar(message = "Game Reset Successfully!")
+                            delay(600)
+                            isInitialCardDisplay = false
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -209,23 +219,21 @@ private fun ContentView() {
                 ) {
                     items(cards.size) { index ->
                         val card = cards[index]
-                        CardButton(
-                            imageVector = card.imageVector, backgroundColor = when {
-                                card.isMatched -> ColorGreen
-                                card.isSelected -> ColorYellow
-                                else -> ColorBlue
-                            }, onClick = {
+                        FlippableCard(
+                            card = card,
+                            shouldShowCard = isInitialCardDisplay,
+                            onClick = {
                                 if (card.isMatched) {
                                     coroutineScope.launch {
                                         snackBarHostState.showSnackbar("Already Matched card can't be selected!")
                                     }
-                                    return@CardButton
+                                    return@FlippableCard
                                 }
                                 if (card.isSelected) {
                                     coroutineScope.launch {
                                         snackBarHostState.showSnackbar("Already selected, please select another card!")
                                     }
-                                    return@CardButton
+                                    return@FlippableCard
                                 }
                                 card.isSelected = true
                                 if (firstSelectedIndex == null) {
@@ -247,8 +255,11 @@ private fun ContentView() {
                                         card.isMatched = true
                                         firstSelectedCard.isMatched = true
                                     } else {
-                                        card.isSelected = false
-                                        firstSelectedCard.isSelected = false
+                                        coroutineScope.launch {
+                                            delay(600)
+                                            card.isSelected = false
+                                            firstSelectedCard.isSelected = false
+                                        }
                                     }
                                     turnCount++
                                     firstSelectedIndex = null
@@ -262,15 +273,28 @@ private fun ContentView() {
 }
 
 @Composable
-private fun CardButton(
-    imageVector: ImageVector, backgroundColor: Color = ColorBlue, onClick: () -> Unit = {}
+private fun FlippableCard(
+    card: CardData, shouldShowCard: Boolean ,onClick: () -> Unit = {}
 ) {
+    val backgroundColor = when {
+        card.isMatched -> ColorGreen
+        card.isSelected -> ColorYellow
+        else -> ColorBlue
+    }
     Button(
-        modifier = Modifier.aspectRatio(1.0f), colors = ButtonDefaults.buttonColors(
+        modifier = Modifier.aspectRatio(1.0f),
+        colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor, contentColor = Color.White
-        ), shape = RoundedCornerShape(CornerSize(10.dp)), onClick = onClick
+        ),
+        shape = RoundedCornerShape(CornerSize(10.dp)),
+        //enabled = !card.isMatched,
+        onClick = onClick
     ) {
-        Image(imageVector = imageVector, "", Modifier.fillMaxSize())
+        if (shouldShowCard || card.isSelected || card.isMatched) {
+            Image(imageVector = card.imageVector, "", Modifier.fillMaxSize())
+        } else {
+            Image(imageVector = Icons.Default.QuestionMark, "", Modifier.fillMaxSize())
+        }
     }
 }
 
