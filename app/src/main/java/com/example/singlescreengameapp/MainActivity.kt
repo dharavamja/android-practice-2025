@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -103,9 +104,12 @@ private fun ContentView() {
     var firstSelectedIndex by remember { mutableStateOf<Int?>(null) }
     var turnCount by remember { mutableIntStateOf(0) }
 
+    var undoStack = remember { mutableStateListOf<List<CardData>>() }
+    var undoCount by remember { mutableIntStateOf(5) }
+
     LaunchedEffect(Unit) {
         cards.clear()
-        cards.addAll(originalCards)
+        cards.addAll(originalCards.shuffled())
     }
 
     val snackBarHostState = remember { SnackbarHostState() }
@@ -119,21 +123,39 @@ private fun ContentView() {
             Row {
                 FilledTonalButton(
                     onClick = {
-
+                        if (undoCount > 0 && undoStack.isNotEmpty()) {
+                            if (firstSelectedIndex != null) {
+                                firstSelectedIndex == null
+                            } else {
+                                cards.clear()
+                                cards.addAll(undoStack.removeAt(undoStack.lastIndex).map {
+                                    CardData(it.id, it.imageVector).apply {
+                                        isSelected = false
+                                        isMatched = it.isMatched
+                                    }
+                                })
+                                turnCount--
+                            }
+                            undoCount--
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar("Successfully Undo the last move.")
+                            }
+                        }
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = Color(0x99A0A0B2), contentColor = Color.Black
                     ),
+                    enabled = undoCount > 0 && undoStack.isNotEmpty(),
                     modifier = Modifier.padding(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
+                        imageVector = Icons.Default.Undo,
                         contentDescription = "Undo",
                         modifier = Modifier.padding(end = 4.dp)
                     )
                     Text(
-                        text = "Undo", fontSize = 16.sp, fontWeight = FontWeight.Bold
+                        text = "Undo : $undoCount", fontSize = 16.sp, fontWeight = FontWeight.Bold
                     )
                 }
                 Text(
@@ -157,6 +179,7 @@ private fun ContentView() {
                         })
                         firstSelectedIndex = null
                         turnCount = 0
+                        undoCount = 5
                         coroutineScope.launch {
                             snackBarHostState.showSnackbar(message = "Game Reset Successfully!")
                         }
@@ -209,6 +232,16 @@ private fun ContentView() {
                                     //If first cars is selected, add it here!
                                     firstSelectedIndex = index
                                 } else {
+                                    undoStack.add(
+                                        cards.map {
+                                            CardData(
+                                                id = it.id,
+                                                imageVector = it.imageVector
+                                            ).apply {
+                                                isSelected = it.isSelected
+                                                isMatched = it.isMatched
+                                            }
+                                        })
                                     val firstSelectedCard = cards[firstSelectedIndex!!]
                                     if (firstSelectedCard.imageVector == card.imageVector) {
                                         card.isMatched = true
